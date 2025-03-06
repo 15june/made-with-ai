@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Odd One Out - Grade 2</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+    body {
+      font-family: 'Montserrat', cursive, sans-serif;
+      background-color: #f0f8ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    h1 {
+      color: #4682b4;
+      text-align: center;
+    }
+    
+    .game-container {
+      width: 90%;
+      max-width: 600px;
+      background-color: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .instructions {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+    
+    .level-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .item {
+      height: 100px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      cursor: pointer;
+      background-color: #e0f0ff;
+      border-radius: 10px;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    
+    .item:hover {
+      transform: scale(1.05);
+      background-color: #d0e8ff;
+    }
+    
+    .feedback {
+      height: 50px;
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #4682b4;
+    }
+    
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4682b4;
+      color: white;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #3b6e9e;
+    }
+    
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .progress-container {
+      width: 100%;
+      background-color: #ddd;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    
+    .progress-bar {
+      height: 20px;
+      background-color: #4caf50;
+      border-radius: 10px;
+      width: 0%;
+      transition: width 0.5s ease-in-out;
+    }
+    
+    .end-screen {
+      text-align: center;
+      display: none;
+    }
+    
+    .win-message {
+      font-size: 24px;
+      color: #4caf50;
+      margin-bottom: 20px;
+    }
+    
+    .stats {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Odd One Out</h1>
+  
+  <div class="game-container">
+    <div class="instructions">Find the item that's different and click on it!</div>
+    
+    <div class="level-info">
+      <div class="level">Level: <span id="current-level">1</span>/20</div>
+      <div class="score">Score: <span id="score">0</span></div>
+    </div>
+    
+    <div class="grid" id="game-grid">
+      <div class="item" data-index="0"></div>
+      <div class="item" data-index="1"></div>
+      <div class="item" data-index="2"></div>
+      <div class="item" data-index="3"></div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <div class="controls">
+      <button id="next-btn" disabled>Next Level</button>
+    </div>
+    
+    <div class="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+  </div>
+  
+  <div class="end-screen" id="end-screen">
+    <div class="win-message">Congratulations! You completed all levels!</div>
+    <div class="stats">
+      Final Score: <span id="final-score">0</span>
+    </div>
+    <button id="play-again-btn">Play Again</button>
+  </div>
+  
+  <script>
+    // Game data - 20 levels with increasing difficulty
+    const gameLevels = [
+      // Level 1 - Basic shapes
+      {
+        items: ['🔴', '🔴', '🔴', '🔵'],
+        correctIndex: 3,
+        hint: "Find the shape with a different color!"
+      },
+      // Level 2 - Animals vs object
+      {
+        items: ['🐶', '🐱', '🦁', '🚗'],
+        correctIndex: 3,
+        hint: "Which one is not an animal?"
+      },
+      // Level 3 - Fruits vs vegetable
+      {
+        items: ['🍎', '🍌', '🍊', '🥦'],
+        correctIndex: 3,
+        hint: "Which one is not a fruit?"
+      },
+      // Level 4 - Numbers - even vs odd
+      {
+        items: ['2', '4', '6', '5'],
+        correctIndex: 3,
+        hint: "Which number is odd while others are even?"
+      },
+      // Level 5 - Transportation
+      {
+        items: ['🚗', '🚌', '🚲', '🍕'],
+        correctIndex: 3,
+        hint: "Which one is not used for transportation?"
+      },
+      // Level 6 - Weather
+      {
+        items: ['☀️', '🌧️', '❄️', '🎮'],
+        correctIndex: 3,
+        hint: "Which one is not related to weather?"
+      },
+      // Level 7 - Shapes
+      {
+        items: ['🔺', '🔻', '🟥', '⭐'],
+        correctIndex: 3,
+        hint: "Which shape doesn't have straight edges?"
+      },
+      // Level 8 - Food
+      {
+        items: ['🍕', '🍦', '🧸', '🍔'],
+        correctIndex: 2,
+        hint: "Which one is not food?"
+      },
+      // Level 9 - Letters (vowels vs consonant)
+      {
+        items: ['A', 'E', 'I', 'B'],
+        correctIndex: 3,
+        hint: "Which one is not a vowel?"
+      },
+      // Level 10 - Numbers by value
+      {
+        items: ['3', '6', '9', '14'],
+        correctIndex: 3,
+        hint: "Which number doesn't belong in the pattern?"
+      },
+      // Level 11 - Sea creatures
+      {
+        items: ['🐟', '🐬', '🐠', '🦆'],
+        correctIndex: 3,
+        hint: "Which one doesn't live in the sea?"
+      },
+      // Level 12 - Clothing
+      {
+        items: ['👕', '👖', '👔', '🧸'],
+        correctIndex: 3,
+        hint: "Which one is not clothing?"
+      },
+      // Level 13 - Colors as words
+      {
+        items: ['RED', 'BLUE', 'GREEN', 'HAPPY'],
+        correctIndex: 3,
+        hint: "Which word is not a color?"
+      },
+      // Level 14 - Math operations
+      {
+        items: ['+', '-', '×', '='],
+        correctIndex: 3,
+        hint: "Which symbol is not a math operation?"
+      },
+      // Level 15 - Sports
+      {
+        items: ['⚽', '🏀', '🎾', '🎮'],
+        correctIndex: 3,
+        hint: "Which one is not a sport?"
+      },
+      // Level 16 - Plants
+      {
+        items: ['🌲', '🌵', '🌹', '🐝'],
+        correctIndex: 3,
+        hint: "Which one is not a plant?"
+      },
+      // Level 17 - Numbers - pattern
+      {
+        items: ['2', '4', '8', '15'],
+        correctIndex: 3,
+        hint: "Which number doesn't follow the pattern?"
+      },
+      // Level 18 - Seasons
+      {
+        items: ['☀️', '🍁', '❄️', '🍰'],
+        correctIndex: 3,
+        hint: "Which one is not a season symbol?"
+      },
+      // Level 19 - School supplies
+      {
+        items: ['📒', '✏️', '📏', '🎸'],
+        correctIndex: 3,
+        hint: "Which one is not used in school?"
+      },
+      // Level 20 - Challenge
+      {
+        items: ['🐘', '🦓', '🦒', '🦋'],
+        correctIndex: 3,
+        hint: "Three are land animals, one can fly. Which one?"
+      }
+    ];
+    
+    // Game state
+    let currentLevel = 0;
+    let score = 0;
+    let attemptMade = false;
+    
+    // DOM elements
+    const gameGrid = document.getElementById('game-grid');
+    const feedback = document.getElementById('feedback');
+    const nextBtn = document.getElementById('next-btn');
+    const currentLevelDisplay = document.getElementById('current-level');
+    const scoreDisplay = document.getElementById('score');
+    const progressBar = document.getElementById('progress-bar');
+    const endScreen = document.getElementById('end-screen');
+    const finalScoreDisplay = document.getElementById('final-score');
+    const playAgainBtn = document.getElementById('play-again-btn');
+    
+    // Initialize game
+    function initGame() {
+      currentLevel = 0;
+      score = 0;
+      attemptMade = false;
+      loadLevel(currentLevel);
+      updateUI();
+      endScreen.style.display = 'none';
+      document.querySelector('.game-container').style.display = 'block';
+    }
+    
+    // Load a level
+    function loadLevel(levelIndex) {
+      if (levelIndex >= gameLevels.length) {
+        endGame();
+        return;
+      }
+      
+      const level = gameLevels[levelIndex];
+      
+      // Reset state
+      attemptMade = false;
+      nextBtn.disabled = true;
+      feedback.textContent = level.hint;
+      
+      // Update grid items
+      const items = document.querySelectorAll('.item');
+      items.forEach((item, index) => {
+        item.textContent = level.items[index];
+        item.classList.remove('correct', 'incorrect');
+        
+        // Add event listeners
+        item.onclick = () => handleItemClick(index, level.correctIndex);
+      });
+      
+      updateUI();
+    }
+    
+    // Handle item click
+    function handleItemClick(clickedIndex, correctIndex) {
+      if (attemptMade) return;
+      
+      attemptMade = true;
+      const items = document.querySelectorAll('.item');
+      
+      if (clickedIndex === correctIndex) {
+        // Correct answer
+        items[clickedIndex].classList.add('correct');
+        feedback.textContent = "Great job! That's correct! 🎉";
+        feedback.style.color = "#4caf50";
+        score += 10;
+        nextBtn.disabled = false;
+      } else {
+        // Incorrect answer
+        items[clickedIndex].classList.add('incorrect');
+        items[correctIndex].classList.add('correct');
+        feedback.textContent = "Not quite! Try to see why the highlighted one is different.";
+        feedback.style.color = "#e74c3c";
+        nextBtn.disabled = false;
+      }
+      
+      updateUI();
+    }
+    
+    // Go to next level
+    function nextLevel() {
+      currentLevel++;
+      loadLevel(currentLevel);
+    }
+    
+    // End the game
+    function endGame() {
+      document.querySelector('.game-container').style.display = 'none';
+      endScreen.style.display = 'block';
+      finalScoreDisplay.textContent = score;
+    }
+    
+    // Update UI elements
+    function updateUI() {
+      currentLevelDisplay.textContent = currentLevel + 1;
+      scoreDisplay.textContent = score;
+      
+      // Update progress bar
+      const progressPercentage = (currentLevel / gameLevels.length) * 100;
+      progressBar.style.width = `${progressPercentage}%`;
+    }
+    
+    // Event listeners
+    nextBtn.addEventListener('click', nextLevel);
+    playAgainBtn.addEventListener('click', initGame);
+    
+    // Apply some visual styles
+    document.querySelectorAll('.item').forEach(item => {
+      item.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+    });
+    
+    // Add CSS classes for feedback
+    const style = document.createElement('style');
+    style.textContent = `
+      .correct {
+        background-color: #a8f0a8 !important;
+        border: 2px solid #4caf50;
+      }
+      
+      .incorrect {
+        background-color: #f0a8a8 !important;
+        border: 2px solid #e74c3c;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Start the game
+    initGame();
+  </script>
+</body>
+</html>
